@@ -157,8 +157,8 @@ class CalculatorViewModel(
     fun onClearHistory() = scope.launch {
         historyMutex.withLock {
             expressionHistoryStore.clear()
+            _state.update { it.copy(historyGroups = emptyList()) }
         }
-        _state.update { it.copy(historyGroups = emptyList()) }
     }
 
     fun onHistoryEntrySelected(expression: String) {
@@ -265,16 +265,22 @@ class CalculatorViewModel(
 
     private suspend fun refreshHistory() {
         val timeZone = timeZoneProvider()
-        val retainedEntries = historyMutex.withLock {
-            ExpressionHistory.retainLast30Days(
+        historyMutex.withLock {
+            val retainedEntries = ExpressionHistory.retainLast30Days(
                 expressionHistoryStore.readEntries(),
                 clock.now(),
                 timeZone
-            ).also { expressionHistoryStore.writeEntries(it) }
-        }
+            )
 
-        _state.update {
-            it.copy(historyGroups = ExpressionHistory.groupByDay(retainedEntries, timeZone))
+            expressionHistoryStore.writeEntries(retainedEntries)
+            _state.update {
+                it.copy(
+                    historyGroups = ExpressionHistory.groupByDay(
+                        retainedEntries,
+                        timeZone
+                    )
+                )
+            }
         }
     }
 
