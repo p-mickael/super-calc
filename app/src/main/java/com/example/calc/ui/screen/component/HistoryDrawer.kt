@@ -31,6 +31,11 @@ fun HistoryDrawer(
     onClearHistory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val rows = historyGroups.flatMap { group ->
+        listOf<HistoryRow>(HistoryRow.Header(group.date)) +
+            group.entries.map { entry -> HistoryRow.Entry(entry.expression) }
+    }
+
     ModalDrawerSheet(modifier = modifier) {
         TopAppBar(
             title = {},
@@ -44,27 +49,28 @@ fun HistoryDrawer(
             }
         )
         LazyColumn {
-            historyGroups.forEach { group ->
-                item {
-                    Text(
-                        text = formatHistoryDate(group.date),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
-                items(group.entries) { entry ->
-                    TextButton(
-                        onClick = { onEntrySelected(entry.expression) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+            items(rows) { row ->
+                when (row) {
+                    is HistoryRow.Entry ->
+                        TextButton(
+                            onClick = { onEntrySelected(row.expression) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = row.expression,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Start,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                    is HistoryRow.Header ->
                         Text(
-                            text = entry.expression,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Start,
-                            color = MaterialTheme.colorScheme.onSurface
+                            text = formatHistoryDate(row.date),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
-                    }
                 }
             }
         }
@@ -72,5 +78,10 @@ fun HistoryDrawer(
 }
 
 private fun formatHistoryDate(date: LocalDate): String =
-    java.time.LocalDate.parse(date.toString())
+    java.time.LocalDate.of(date.year, date.monthNumber, date.dayOfMonth)
         .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+
+private sealed interface HistoryRow {
+    data class Header(val date: LocalDate) : HistoryRow
+    data class Entry(val expression: String) : HistoryRow
+}

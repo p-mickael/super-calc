@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.TimeZone
 import java.math.BigDecimal
 import kotlin.time.Clock
@@ -39,7 +41,12 @@ class CalculatorViewModel(
     val state: StateFlow<UiState> = _state.asStateFlow()
     private val calculator = Calculator()
     private var currencyConverter: CurrencyConverter? = null
+    private val historyMutex = Mutex()
     private val scope: CoroutineScope get() = externalScope ?: viewModelScope
+
+    companion object {
+        private const val MAX_HISTORY_ENTRIES = 500
+    }
 
     init {
         scope.launch {
@@ -148,7 +155,9 @@ class CalculatorViewModel(
     }
 
     fun onClearHistory() = scope.launch {
-        expressionHistoryStore.clear()
+        historyMutex.withLock {
+            expressionHistoryStore.clear()
+        }
         _state.update { it.copy(historyGroups = emptyList()) }
     }
 
@@ -256,23 +265,27 @@ class CalculatorViewModel(
 
     private suspend fun refreshHistory() {
         val timeZone = timeZoneProvider()
-        val retainedEntries = ExpressionHistory.retainLast30Days(
-            expressionHistoryStore.readEntries(),
-            clock.now(),
-            timeZone
-        )
+        val retainedEntries = historyMutex.withLock {
+            ExpressionHistory.retainLast30Days(
+                expressionHistoryStore.readEntries(),
+                clock.now(),
+                timeZone
+            ).also { expressionHistoryStore.writeEntries(it) }
+        }
 
-        expressionHistoryStore.writeEntries(retainedEntries)
         _state.update {
             it.copy(historyGroups = ExpressionHistory.groupByDay(retainedEntries, timeZone))
         }
     }
 
     private suspend fun saveHistoryEntry(expression: String) {
-        val newEntry = HistoryEntry(expression, clock.now())
-        expressionHistoryStore.writeEntries(
-            listOf(newEntry) + expressionHistoryStore.readEntries()
-        )
+        historyMutex.withLock {
+            val newEntry = HistoryEntry(expression, clock.now())
+            expressionHistoryStore.writeEntries(
+                (listOf(newEntry) + expressionHistoryStore.readEntries())
+                    .take(MAX_HISTORY_ENTRIES)
+            )
+        }
     }
 
     private fun renderTokens(input: CalculatorInput): String =

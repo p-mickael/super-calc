@@ -63,7 +63,8 @@ class CalculatorInput private constructor(val tokens: List<Token>) {
                     in '0'..'9' -> currentInput.appendDigit(char)
                     '.', ',' -> currentInput.appendDot()
                     '+' -> currentInput.appendOperator(Operator.PLUS)
-                    '-', '–' -> currentInput.appendOperator(Operator.MINUS)
+                    '-' -> appendRenderedNegative(currentInput)
+                    '–' -> appendRenderedBinaryMinus(currentInput)
                     '×' -> currentInput.appendOperator(Operator.TIMES)
                     '÷' -> currentInput.appendOperator(Operator.DIVIDE)
                     '(' -> currentInput.openParenthesis()
@@ -72,6 +73,16 @@ class CalculatorInput private constructor(val tokens: List<Token>) {
                     else -> null
                 }
             }
+
+        private fun appendRenderedNegative(input: CalculatorInput): CalculatorInput? =
+            input.takeIf { !isLeftTokenValue(it.tokens.lastOrNull()) }
+                ?.appendOperator(Operator.MINUS)
+                ?.takeIf { it.tokens.lastOrNull() is Token.Negative }
+
+        private fun appendRenderedBinaryMinus(input: CalculatorInput): CalculatorInput? =
+            input.takeIf { isLeftTokenValue(it.tokens.lastOrNull()) }
+                ?.appendOperator(Operator.MINUS)
+                ?.takeIf { (it.tokens.lastOrNull() as? Token.Operator)?.operator == Operator.MINUS }
     }
 
     private val last get() = tokens.lastOrNull()
