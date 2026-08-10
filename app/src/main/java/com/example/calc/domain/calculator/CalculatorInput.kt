@@ -55,6 +55,23 @@ class CalculatorInput private constructor(val tokens: List<Token>) {
                 else listOf(Token.Number(valueText))
             )
         }
+
+        fun fromRenderedExpression(expression: String): CalculatorInput? =
+            expression.fold<Char, CalculatorInput?>(EMPTY) { input, char ->
+                val currentInput = input ?: return@fold null
+                when (char) {
+                    in '0'..'9' -> currentInput.appendDigit(char)
+                    '.', ',' -> currentInput.appendDot()
+                    '+' -> currentInput.appendOperator(Operator.PLUS)
+                    '-', '–' -> currentInput.appendOperator(Operator.MINUS)
+                    '×' -> currentInput.appendOperator(Operator.TIMES)
+                    '÷' -> currentInput.appendOperator(Operator.DIVIDE)
+                    '(' -> currentInput.openParenthesis()
+                    ')' -> currentInput.closeParenthesis()
+                    '%' -> currentInput.appendPercent()
+                    else -> null
+                }
+            }
     }
 
     private val last get() = tokens.lastOrNull()

@@ -11,27 +11,38 @@ import com.example.calc.domain.calculator.model.Operator
 import com.example.calc.domain.calculator.model.Token
 import com.example.calc.domain.conversion.CurrencyConverter
 import com.example.calc.domain.conversion.RatesRepository
+import com.example.calc.domain.history.ExpressionHistory
+import com.example.calc.domain.history.ExpressionHistoryStore
+import com.example.calc.domain.history.HistoryEntry
 import com.example.calc.ui.screen.model.ExpressionState
 import com.example.calc.ui.screen.model.UiState
 import com.example.calc.ui.screen.model.toFormattedString
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.TimeZone
 import java.math.BigDecimal
+import kotlin.time.Clock
 
 class CalculatorViewModel(
     private val repository: RatesRepository,
-    private val appPreferenceStore: AppPreferenceStore
+    private val appPreferenceStore: AppPreferenceStore,
+    private val expressionHistoryStore: ExpressionHistoryStore,
+    private val clock: Clock = Clock.System,
+    private val timeZoneProvider: () -> TimeZone = { TimeZone.currentSystemDefault() },
+    private val externalScope: CoroutineScope? = null
 ) : ViewModel() {
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
     private val calculator = Calculator()
     private var currencyConverter: CurrencyConverter? = null
+    private val scope: CoroutineScope get() = externalScope ?: viewModelScope
 
     init {
-        viewModelScope.launch {
+        scope.launch {
             appPreferenceStore.getLastCalculatorMode()?.let { lastCalculatorMode ->
                 if (lastCalculatorMode == CalculatorMode.CONVERTER)
                     switchToConverter()
@@ -64,27 +75,42 @@ class CalculatorViewModel(
         it.input.clear()
     }
 
-    fun onEquals() = _state.update { s ->
-        when (val result = calculator.calculate(s.input)) {
-            is CalculatorResult.Value -> s.copy(
-                input = CalculatorInput.of(result.value),
-                expression = result.value.toFormattedString(),
-                previewValue = if (s.calculatorMode == CalculatorMode.CALCULATOR) null
-                else displayValueOf(s.calculatorMode, result.value),
-                expressionState = ExpressionState.RESULT
-            )
+    fun onEquals() {
+        val currentState = _state.value
+        val sourceExpression = renderTokens(currentState.input)
 
-            CalculatorResult.DivisionByZero -> s.copy(
-                expression = "Division par zéro",
-                previewValue = null,
-                expressionState = ExpressionState.ERROR
-            )
+        when (val result = calculator.calculate(currentState.input)) {
+            is CalculatorResult.Value -> {
+                val previewValue = if (currentState.calculatorMode == CalculatorMode.CALCULATOR) null
+                else displayValueOf(currentState.calculatorMode, result.value)
 
-            CalculatorResult.Incomplete -> s
+                _state.update {
+                    it.copy(
+                        input = CalculatorInput.of(result.value),
+                        expression = result.value.toFormattedString(),
+                        previewValue = previewValue,
+                        expressionState = ExpressionState.RESULT
+                    )
+                }
+                scope.launch {
+                    saveHistoryEntry(sourceExpression)
+                }
+            }
+
+            CalculatorResult.DivisionByZero ->
+                _state.update {
+                    it.copy(
+                        expression = "Division par zéro",
+                        previewValue = null,
+                        expressionState = ExpressionState.ERROR
+                    )
+                }
+
+            CalculatorResult.Incomplete -> Unit
         }
     }
 
-    fun onModeChanged(newMode: CalculatorMode) = viewModelScope.launch {
+    fun onModeChanged(newMode: CalculatorMode) = scope.launch {
         when (newMode) {
             CalculatorMode.CONVERTER -> switchToConverter()
             CalculatorMode.CALCULATOR -> switchToCalculator()
@@ -93,15 +119,15 @@ class CalculatorViewModel(
         appPreferenceStore.saveLastCalculatorMode(_state.value.calculatorMode)
     }
 
-    fun onConversionSourceChanged(newSource: String) = viewModelScope.launch {
+    fun onConversionSourceChanged(newSource: String) = scope.launch {
         updateConverter(newSource, _state.value.currencyState.targetName)
     }
 
-    fun onConversionTargetChanged(newTarget: String) = viewModelScope.launch {
+    fun onConversionTargetChanged(newTarget: String) = scope.launch {
         updateConverter(_state.value.currencyState.sourceName, newTarget)
     }
 
-    fun onSwapUnits() = viewModelScope.launch {
+    fun onSwapUnits() = scope.launch {
         val current = _state.value.currencyState
         val previewValue = _state.value.previewValue ?: return@launch
 
@@ -117,9 +143,32 @@ class CalculatorViewModel(
         }
     }
 
+    fun onHistoryRequested() = scope.launch {
+        refreshHistory()
+    }
+
+    fun onClearHistory() = scope.launch {
+        expressionHistoryStore.clear()
+        _state.update { it.copy(historyGroups = emptyList()) }
+    }
+
+    fun onHistoryEntrySelected(expression: String) {
+        val restoredInput = CalculatorInput.fromRenderedExpression(expression) ?: return
+
+        _state.update {
+            it.copy(
+                input = restoredInput,
+                expression = renderTokens(restoredInput),
+                previewValue = computePreviewValue(it.calculatorMode, restoredInput),
+                expressionState = ExpressionState.EDITING,
+                expressionFocusRequestKey = it.expressionFocusRequestKey + 1
+            )
+        }
+    }
+
     fun onForeground() {
         if (_state.value.calculatorMode == CalculatorMode.CONVERTER)
-            viewModelScope.launch {
+            scope.launch {
                 updateConverter(
                     _state.value.currencyState.sourceName,
                     _state.value.currencyState.targetName
@@ -204,6 +253,27 @@ class CalculatorViewModel(
                 CalculatorMode.CONVERTER -> currencyConverter?.convert(value)
             }
         }
+
+    private suspend fun refreshHistory() {
+        val timeZone = timeZoneProvider()
+        val retainedEntries = ExpressionHistory.retainLast30Days(
+            expressionHistoryStore.readEntries(),
+            clock.now(),
+            timeZone
+        )
+
+        expressionHistoryStore.writeEntries(retainedEntries)
+        _state.update {
+            it.copy(historyGroups = ExpressionHistory.groupByDay(retainedEntries, timeZone))
+        }
+    }
+
+    private suspend fun saveHistoryEntry(expression: String) {
+        val newEntry = HistoryEntry(expression, clock.now())
+        expressionHistoryStore.writeEntries(
+            listOf(newEntry) + expressionHistoryStore.readEntries()
+        )
+    }
 
     private fun renderTokens(input: CalculatorInput): String =
         input.tokens.joinToString("") { token ->

@@ -191,6 +191,9 @@ fun KeyboardPreview() {
             {},
             {},
             {},
+            {},
+            {},
+            {},
             {}
             ),
             modifier = Modifier

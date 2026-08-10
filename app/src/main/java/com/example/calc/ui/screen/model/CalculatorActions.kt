@@ -16,5 +16,8 @@ data class CalculatorActions(
     val onModeChanged: (CalculatorMode) -> Unit,
     val onConversionSourceChanged: (String) -> Unit,
     val onConversionTargetChanged: (String) -> Unit,
-    val onSwapUnits: () -> Unit
+    val onSwapUnits: () -> Unit,
+    val onHistoryRequested: () -> Unit,
+    val onClearHistory: () -> Unit,
+    val onHistoryEntrySelected: (String) -> Unit
 )

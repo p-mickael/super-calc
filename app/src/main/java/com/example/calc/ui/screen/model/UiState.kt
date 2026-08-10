@@ -2,6 +2,7 @@ package com.example.calc.ui.screen.model
 
 import com.example.calc.domain.CalculatorMode
 import com.example.calc.domain.calculator.CalculatorInput
+import com.example.calc.domain.history.HistoryDayGroup
 import java.math.BigDecimal
 
 data class UiState(
@@ -10,7 +11,9 @@ data class UiState(
     val previewValue: BigDecimal? = null,
     val expressionState: ExpressionState = ExpressionState.EDITING,
     val calculatorMode: CalculatorMode = CalculatorMode.CALCULATOR,
-    val currencyState: CurrencyState = CurrencyState()
+    val currencyState: CurrencyState = CurrencyState(),
+    val historyGroups: List<HistoryDayGroup> = emptyList(),
+    val expressionFocusRequestKey: Int = 0
 ) {
     val preview: String get() = previewValue.toFormattedString()
 }

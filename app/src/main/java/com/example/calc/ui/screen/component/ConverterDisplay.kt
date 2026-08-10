@@ -1,9 +1,9 @@
 package com.example.calc.ui.screen.component
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SwapVert
@@ -26,6 +26,7 @@ import com.example.calc.ui.theme.CalcTheme
 fun ConverterDisplay(
     expression: String,
     preview: String,
+    expressionFocusRequestKey: Int,
     selectedSource: String,
     selectedTarget: String,
     unitList: Set<String>,
@@ -39,19 +40,11 @@ fun ConverterDisplay(
         horizontalAlignment = Alignment.End,
         modifier = modifier
     ) {
-        Text(
-            expression,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
-            autoSize = TextAutoSize.StepBased(
-                maxFontSize = 60.sp,
-                minFontSize = 12.sp
-            ),
-            textAlign = TextAlign.Right,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .weight(1f)
+        ExpressionField(
+            expression = expression,
+            focusRequestKey = expressionFocusRequestKey,
+            textColor = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
         )
         UnitDropdown(unitList, selectedSource, onSourceChanged, topUnits)
         Row(
@@ -93,6 +86,7 @@ fun ConverterDisplayPreview() {
         ConverterDisplay(
             "4+8-7",
             "5",
+            0,
             "EUR",
             "JPY",
             setOf("EUR", "JPY", "USD"),
