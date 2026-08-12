@@ -70,7 +70,7 @@ private fun Content(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = false,
+        gesturesEnabled = true,
         drawerContent = {
             HistoryDrawer(
                 historyGroups = state.historyGroups,
@@ -91,7 +91,9 @@ private fun Content(
                     selectedMode = state.calculatorMode,
                     onHistoryRequested = {
                         actions.onHistoryRequested()
-                        coroutineScope.launch { drawerState.open() }
+                        coroutineScope.launch {
+                            if (drawerState.currentValue == DrawerValue.Closed) drawerState.open() else drawerState.close()
+                        }
                     },
                     onModeChanged = actions.onModeChanged
                 )
