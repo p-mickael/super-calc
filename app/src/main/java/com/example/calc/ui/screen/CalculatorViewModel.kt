@@ -51,6 +51,12 @@ class CalculatorViewModel(
 
     init {
         scope.launch {
+            appPreferenceStore.getLastCurrencyPair()?.let { (sourceName, targetName) ->
+                _state.update {
+                    it.copy(currencyState = it.currencyState.copy(sourceName = sourceName, targetName = targetName))
+                }
+            }
+
             appPreferenceStore.getLastCalculatorMode()?.let { lastCalculatorMode ->
                 if (lastCalculatorMode == CalculatorMode.CONVERTER)
                     switchToConverter()
@@ -127,18 +133,28 @@ class CalculatorViewModel(
     }
 
     fun onConversionSourceChanged(newSource: String) = scope.launch {
-        updateConverter(newSource, _state.value.currencyState.targetName)
+        val targetName = _state.value.currencyState.targetName
+        if (updateConverter(newSource, targetName)) {
+            appPreferenceStore.saveLastCurrencyPair(newSource, targetName)
+        }
     }
 
     fun onConversionTargetChanged(newTarget: String) = scope.launch {
-        updateConverter(_state.value.currencyState.sourceName, newTarget)
+        val sourceName = _state.value.currencyState.sourceName
+        if (updateConverter(sourceName, newTarget)) {
+            appPreferenceStore.saveLastCurrencyPair(sourceName, newTarget)
+        }
     }
 
     fun onSwapUnits() = scope.launch {
         val current = _state.value.currencyState
-        val previewValue = _state.value.previewValue ?: return@launch
+        val previewValue = _state.value.previewValue
 
-        if (updateConverter(current.targetName, current.sourceName)) {
+        if (!updateConverter(current.targetName, current.sourceName)) return@launch
+
+        appPreferenceStore.saveLastCurrencyPair(current.targetName, current.sourceName)
+
+        if (previewValue != null) {
             val nextInput = CalculatorInput.of(previewValue)
             _state.update {
                 it.copy(

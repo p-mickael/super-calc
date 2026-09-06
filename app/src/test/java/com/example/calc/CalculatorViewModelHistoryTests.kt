@@ -167,11 +167,18 @@ class CalculatorViewModelHistoryTests {
 
     private class FakeAppPreferenceStore : AppPreferenceStore {
         private var lastCalculatorMode: CalculatorMode? = null
+        private var lastCurrencyPair: Pair<String, String>? = null
 
         override suspend fun getLastCalculatorMode(): CalculatorMode? = lastCalculatorMode
 
         override suspend fun saveLastCalculatorMode(calculatorMode: CalculatorMode) {
             lastCalculatorMode = calculatorMode
+        }
+
+        override suspend fun getLastCurrencyPair(): Pair<String, String>? = lastCurrencyPair
+
+        override suspend fun saveLastCurrencyPair(sourceName: String, targetName: String) {
+            lastCurrencyPair = sourceName to targetName
         }
     }
 

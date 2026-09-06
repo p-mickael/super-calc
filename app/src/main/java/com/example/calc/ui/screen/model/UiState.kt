@@ -15,7 +15,9 @@ data class UiState(
     val historyGroups: List<HistoryDayGroup> = emptyList(),
     val expressionFocusRequestKey: Int = 0
 ) {
-    val preview: String get() = previewValue.toFormattedString()
+    val preview: String get() = previewValue.toFormattedString(
+        maxDecimals = if (calculatorMode == CalculatorMode.CONVERTER) 2 else null
+    )
 }
 
 data class CurrencyState(
