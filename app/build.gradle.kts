@@ -23,10 +23,17 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(localProperties.getProperty("KEYSTORE_PATH"))
-            storePassword = localProperties.getProperty("KEYSTORE_PASSWORD")
-            keyAlias = localProperties.getProperty("KEY_ALIAS")
-            keyPassword = localProperties.getProperty("KEY_PASSWORD")
+            val path = localProperties.getProperty("KEYSTORE_PATH")
+            val pass = localProperties.getProperty("KEYSTORE_PASSWORD")
+            val alias = localProperties.getProperty("KEY_ALIAS")
+            val keyPass = localProperties.getProperty("KEY_PASSWORD")
+
+            if (path != null && pass != null && alias != null && keyPass != null) {
+                storeFile = file(path)
+                storePassword = pass
+                keyAlias = alias
+                keyPassword = keyPass
+            }
         }
     }
 

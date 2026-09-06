@@ -1,7 +1,5 @@
 package com.example.calc.ui.screen
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,11 +11,8 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -80,10 +75,10 @@ private fun Content(
         drawerContent = {
             HistoryDrawer(
                 historyGroups = state.historyGroups,
-                onEntrySelected = { expression ->
+                onEntrySelected = { tokens ->
                     coroutineScope.launch {
                         drawerState.close()
-                        actions.onHistoryEntrySelected(expression)
+                        actions.onHistoryEntrySelected(tokens)
                     }
                 },
                 onClearHistory = actions.onClearHistory
@@ -97,9 +92,13 @@ private fun Content(
                     TopMenu(
                         selectedMode = state.calculatorMode,
                         onHistoryRequested = {
-                            actions.onHistoryRequested()
                             coroutineScope.launch {
-                                if (drawerState.currentValue == DrawerValue.Closed) drawerState.open() else drawerState.close()
+                                if (drawerState.currentValue == DrawerValue.Closed) {
+                                    actions.onHistoryRequested()
+                                    drawerState.open()
+                                } else {
+                                    drawerState.close()
+                                }
                             }
                         },
                         onModeChanged = actions.onModeChanged
@@ -147,18 +146,6 @@ private fun Content(
                             .weight(20f)
                     )
                 }
-            }
-
-            val isOpen = remember { derivedStateOf { drawerState.currentValue == DrawerValue.Open } }
-            if (isOpen.value) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Transparent)
-                        .clickable {
-                            coroutineScope.launch { drawerState.close() }
-                        }
-                )
             }
         }
     }

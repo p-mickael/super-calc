@@ -45,9 +45,9 @@ class Evaluator {
 
         val rightValue = evaluateExpression(right)
         return when (node.operator) {
-            Operator.PLUS -> leftValue + rightValue
-            Operator.MINUS -> leftValue - rightValue
-            Operator.TIMES -> leftValue * rightValue
+            Operator.PLUS -> leftValue.add(rightValue, MATH_CONTEXT)
+            Operator.MINUS -> leftValue.subtract(rightValue, MATH_CONTEXT)
+            Operator.TIMES -> leftValue.multiply(rightValue, MATH_CONTEXT)
             Operator.DIVIDE -> {
                 if (rightValue.signum() == 0) throw ArithmeticException("Division by zero")
                 leftValue.divide(rightValue, MATH_CONTEXT)
@@ -56,8 +56,8 @@ class Evaluator {
     }
 
     private fun BigDecimal.increaseBy(rate: Expression.Percent): BigDecimal =
-        this * (BigDecimal.ONE + evaluateExpression(rate))
+        this.multiply(BigDecimal.ONE + evaluateExpression(rate), MATH_CONTEXT)
 
     private fun BigDecimal.decreaseBy(rate: Expression.Percent): BigDecimal =
-        this * (BigDecimal.ONE - evaluateExpression(rate))
+        this.multiply(BigDecimal.ONE - evaluateExpression(rate), MATH_CONTEXT)
 }

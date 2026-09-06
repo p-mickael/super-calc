@@ -11,6 +11,7 @@ import com.example.calc.domain.calculator.model.Operator
 import com.example.calc.domain.calculator.model.Token
 import com.example.calc.domain.conversion.CurrencyConverter
 import com.example.calc.domain.conversion.RatesRepository
+import com.example.calc.domain.calculator.renderExpression
 import com.example.calc.domain.history.ExpressionHistory
 import com.example.calc.domain.history.ExpressionHistoryStore
 import com.example.calc.domain.history.HistoryEntry
@@ -84,7 +85,6 @@ class CalculatorViewModel(
 
     fun onEquals() {
         val currentState = _state.value
-        val sourceExpression = renderTokens(currentState.input)
 
         when (val result = calculator.calculate(currentState.input)) {
             is CalculatorResult.Value -> {
@@ -100,7 +100,7 @@ class CalculatorViewModel(
                     )
                 }
                 scope.launch {
-                    saveHistoryEntry(sourceExpression)
+                    saveHistoryEntry(currentState.input.tokens)
                 }
             }
 
@@ -143,7 +143,7 @@ class CalculatorViewModel(
             _state.update {
                 it.copy(
                     input = nextInput,
-                    expression = renderTokens(nextInput),
+                    expression = nextInput.tokens.renderExpression(),
                     previewValue = computePreviewValue(CalculatorMode.CONVERTER, nextInput)
                 )
             }
@@ -161,13 +161,13 @@ class CalculatorViewModel(
         }
     }
 
-    fun onHistoryEntrySelected(expression: String) {
-        val restoredInput = CalculatorInput.fromRenderedExpression(expression) ?: return
+    fun onHistoryEntrySelected(tokens: List<Token>) {
+        val restoredInput = CalculatorInput.fromTokens(tokens) ?: return
 
         _state.update {
             it.copy(
                 input = restoredInput,
-                expression = renderTokens(restoredInput),
+                expression = restoredInput.tokens.renderExpression(),
                 previewValue = computePreviewValue(it.calculatorMode, restoredInput),
                 expressionState = ExpressionState.EDITING,
                 expressionFocusRequestKey = it.expressionFocusRequestKey + 1
@@ -239,7 +239,7 @@ class CalculatorViewModel(
         val nextInput = operation(it)
         it.copy(
             input = nextInput,
-            expression = renderTokens(nextInput),
+            expression = nextInput.tokens.renderExpression(),
             previewValue = computePreviewValue(it.calculatorMode, nextInput),
             expressionState = ExpressionState.EDITING
         )
@@ -284,31 +284,13 @@ class CalculatorViewModel(
         }
     }
 
-    private suspend fun saveHistoryEntry(expression: String) {
+    private suspend fun saveHistoryEntry(tokens: List<Token>) {
         historyMutex.withLock {
-            val newEntry = HistoryEntry(expression, clock.now())
+            val newEntry = HistoryEntry(tokens, clock.now())
             expressionHistoryStore.writeEntries(
                 (listOf(newEntry) + expressionHistoryStore.readEntries())
                     .take(MAX_HISTORY_ENTRIES)
             )
         }
     }
-
-    private fun renderTokens(input: CalculatorInput): String =
-        input.tokens.joinToString("") { token ->
-            when (token) {
-                is Token.Number -> token.text
-                is Token.Operator -> when (token.operator) {
-                    Operator.PLUS -> "+"
-                    Operator.MINUS -> "–"
-                    Operator.TIMES -> "×"
-                    Operator.DIVIDE -> "÷"
-                }
-
-                is Token.Percent -> "%"
-                is Token.Negative -> "-"
-                is Token.LeftParenthesis -> "("
-                is Token.RightParenthesis -> ")"
-            }
-        }
 }

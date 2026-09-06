@@ -4,6 +4,7 @@ import com.example.calc.domain.AppPreferenceStore
 import com.example.calc.domain.CalculatorMode
 import com.example.calc.domain.calculator.model.Operator
 import com.example.calc.domain.calculator.model.Token
+import com.example.calc.domain.calculator.renderExpression
 import com.example.calc.domain.conversion.CurrencyRates
 import com.example.calc.domain.conversion.RatesRepository
 import com.example.calc.domain.history.ExpressionHistoryStore
@@ -28,7 +29,7 @@ class CalculatorViewModelHistoryTests {
         viewModel.enter("1+2")
         viewModel.onEquals()
 
-        assertEquals(listOf("1+2"), historyStore.entries.map { it.expression })
+        assertEquals(listOf("1+2"), historyStore.entries.map { it.tokens.renderExpression() })
         assertEquals("3", viewModel.state.value.expression)
     }
 
@@ -54,7 +55,7 @@ class CalculatorViewModelHistoryTests {
         viewModel.onEquals()
 
         assertEquals(CalculatorMode.CONVERTER, viewModel.state.value.calculatorMode)
-        assertEquals(listOf("1+2"), historyStore.entries.map { it.expression })
+        assertEquals(listOf("1+2"), historyStore.entries.map { it.tokens.renderExpression() })
         assertEquals("3", viewModel.state.value.expression)
     }
 
@@ -62,9 +63,9 @@ class CalculatorViewModelHistoryTests {
     fun `opening history cleans expired entries and groups by local day`() {
         val historyStore = FakeExpressionHistoryStore(
             listOf(
-                HistoryEntry("expired", Instant.parse("2026-07-11T21:59:59Z")),
-                HistoryEntry("boundary", Instant.parse("2026-07-11T22:00:00Z")),
-                HistoryEntry("today", Instant.parse("2026-08-10T00:30:00Z"))
+                taggedEntry("expired", Instant.parse("2026-07-11T21:59:59Z")),
+                taggedEntry("boundary", Instant.parse("2026-07-11T22:00:00Z")),
+                taggedEntry("today", Instant.parse("2026-08-10T00:30:00Z"))
             )
         )
         val viewModel = createViewModel(
@@ -74,7 +75,10 @@ class CalculatorViewModelHistoryTests {
 
         viewModel.onHistoryRequested()
 
-        assertEquals(listOf("today", "boundary"), historyStore.entries.map { it.expression })
+        assertEquals(
+            listOf("today", "boundary"),
+            historyStore.entries.map { it.tokens.renderExpression() }
+        )
         assertEquals(
             listOf("2026-08-10", "2026-07-12"),
             viewModel.state.value.historyGroups.map { it.date.toString() }
@@ -84,19 +88,17 @@ class CalculatorViewModelHistoryTests {
     @Test
     fun `selecting a history entry restores the input and requests focus at the end`() {
         val viewModel = createViewModel()
-
-        viewModel.onHistoryEntrySelected("5×(2)")
-
-        assertEquals(
-            listOf(
-                Token.Number("5"),
-                Token.Operator(Operator.TIMES),
-                Token.LeftParenthesis,
-                Token.Number("2"),
-                Token.RightParenthesis
-            ),
-            viewModel.state.value.input.tokens
+        val selectedTokens = listOf(
+            Token.Number("5"),
+            Token.Operator(Operator.TIMES),
+            Token.LeftParenthesis,
+            Token.Number("2"),
+            Token.RightParenthesis
         )
+
+        viewModel.onHistoryEntrySelected(selectedTokens)
+
+        assertEquals(selectedTokens, viewModel.state.value.input.tokens)
         assertEquals("5×(2)", viewModel.state.value.expression)
         assertEquals("10", viewModel.state.value.preview)
         assertEquals(ExpressionState.EDITING, viewModel.state.value.expressionState)
@@ -106,7 +108,7 @@ class CalculatorViewModelHistoryTests {
     @Test
     fun `clear history empties both persistence and visible groups`() {
         val historyStore = FakeExpressionHistoryStore(
-            listOf(HistoryEntry("1+2", Instant.parse("2026-08-10T00:30:00Z")))
+            listOf(taggedEntry("1+2", Instant.parse("2026-08-10T00:30:00Z")))
         )
         val viewModel = createViewModel(historyStore = historyStore)
 
@@ -116,6 +118,9 @@ class CalculatorViewModelHistoryTests {
         assertTrue(historyStore.entries.isEmpty())
         assertTrue(viewModel.state.value.historyGroups.isEmpty())
     }
+
+    private fun taggedEntry(tag: String, recordedAt: Instant) =
+        HistoryEntry(listOf(Token.Number(tag)), recordedAt)
 
     private fun createViewModel(
         historyStore: FakeExpressionHistoryStore = FakeExpressionHistoryStore(),

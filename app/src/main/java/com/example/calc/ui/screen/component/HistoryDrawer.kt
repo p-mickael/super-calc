@@ -18,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.calc.domain.calculator.model.Token
+import com.example.calc.domain.calculator.renderExpression
 import com.example.calc.domain.history.HistoryDayGroup
 import kotlinx.datetime.LocalDate
 import java.time.format.DateTimeFormatter
@@ -27,13 +29,13 @@ import java.time.format.FormatStyle
 @Composable
 fun HistoryDrawer(
     historyGroups: List<HistoryDayGroup>,
-    onEntrySelected: (String) -> Unit,
+    onEntrySelected: (List<Token>) -> Unit,
     onClearHistory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val rows = historyGroups.flatMap { group ->
         listOf<HistoryRow>(HistoryRow.Header(group.date)) +
-            group.entries.map { entry -> HistoryRow.Entry(entry.expression) }
+            group.entries.map { entry -> HistoryRow.Entry(entry.tokens) }
     }
 
     ModalDrawerSheet(modifier = modifier) {
@@ -53,11 +55,11 @@ fun HistoryDrawer(
                 when (row) {
                     is HistoryRow.Entry ->
                         TextButton(
-                            onClick = { onEntrySelected(row.expression) },
+                            onClick = { onEntrySelected(row.tokens) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = row.expression,
+                                text = row.tokens.renderExpression(),
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = TextAlign.Start,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -83,5 +85,5 @@ private fun formatHistoryDate(date: LocalDate): String =
 
 private sealed interface HistoryRow {
     data class Header(val date: LocalDate) : HistoryRow
-    data class Entry(val expression: String) : HistoryRow
+    data class Entry(val tokens: List<Token>) : HistoryRow
 }

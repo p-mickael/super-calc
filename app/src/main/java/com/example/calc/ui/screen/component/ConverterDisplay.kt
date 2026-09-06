@@ -66,7 +66,7 @@ fun ConverterDisplay(
             overflow = TextOverflow.Clip,
             autoSize = TextAutoSize.StepBased(
                 maxFontSize = 60.sp,
-                minFontSize = 12.sp
+                minFontSize = 10.sp
             ),
             textAlign = TextAlign.Right,
             modifier = Modifier

@@ -56,33 +56,8 @@ class CalculatorInput private constructor(val tokens: List<Token>) {
             )
         }
 
-        fun fromRenderedExpression(expression: String): CalculatorInput? =
-            expression.fold<Char, CalculatorInput?>(EMPTY) { input, char ->
-                val currentInput = input ?: return@fold null
-                when (char) {
-                    in '0'..'9' -> currentInput.appendDigit(char)
-                    '.', ',' -> currentInput.appendDot()
-                    '+' -> currentInput.appendOperator(Operator.PLUS)
-                    '-' -> appendRenderedNegative(currentInput)
-                    '–' -> appendRenderedBinaryMinus(currentInput)
-                    '×' -> currentInput.appendOperator(Operator.TIMES)
-                    '÷' -> currentInput.appendOperator(Operator.DIVIDE)
-                    '(' -> currentInput.openParenthesis()
-                    ')' -> currentInput.closeParenthesis()
-                    '%' -> currentInput.appendPercent()
-                    else -> null
-                }
-            }
-
-        private fun appendRenderedNegative(input: CalculatorInput): CalculatorInput? =
-            input.takeIf { !isLeftTokenValue(it.tokens.lastOrNull()) }
-                ?.appendOperator(Operator.MINUS)
-                ?.takeIf { it.tokens.lastOrNull() is Token.Negative }
-
-        private fun appendRenderedBinaryMinus(input: CalculatorInput): CalculatorInput? =
-            input.takeIf { isLeftTokenValue(it.tokens.lastOrNull()) }
-                ?.appendOperator(Operator.MINUS)
-                ?.takeIf { (it.tokens.lastOrNull() as? Token.Operator)?.operator == Operator.MINUS }
+        fun fromTokens(tokens: List<Token>): CalculatorInput? =
+            runCatching { CalculatorInput(tokens) }.getOrNull()
     }
 
     private val last get() = tokens.lastOrNull()
