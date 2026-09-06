@@ -286,10 +286,12 @@ class CalculatorViewModel(
 
     private suspend fun saveHistoryEntry(tokens: List<Token>) {
         historyMutex.withLock {
+            val existingEntries = expressionHistoryStore.readEntries()
+            if (existingEntries.firstOrNull()?.tokens == tokens) return@withLock
+
             val newEntry = HistoryEntry(tokens, clock.now())
             expressionHistoryStore.writeEntries(
-                (listOf(newEntry) + expressionHistoryStore.readEntries())
-                    .take(MAX_HISTORY_ENTRIES)
+                (listOf(newEntry) + existingEntries).take(MAX_HISTORY_ENTRIES)
             )
         }
     }

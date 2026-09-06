@@ -44,6 +44,8 @@ fun ConverterDisplay(
             expression = expression,
             focusRequestKey = expressionFocusRequestKey,
             textColor = MaterialTheme.colorScheme.onSurface,
+            maxFontSize = 60.sp,
+            minFontSize = 10.sp,
             modifier = Modifier.weight(1f)
         )
         UnitDropdown(unitList, selectedSource, onSourceChanged, topUnits)

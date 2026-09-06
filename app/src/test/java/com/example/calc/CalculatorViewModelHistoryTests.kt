@@ -46,6 +46,19 @@ class CalculatorViewModelHistoryTests {
     }
 
     @Test
+    fun `saving the same expression twice in a row keeps only one history entry`() {
+        val historyStore = FakeExpressionHistoryStore()
+        val viewModel = createViewModel(historyStore = historyStore)
+
+        viewModel.enter("1+2")
+        viewModel.onEquals()
+        viewModel.enter("1+2")
+        viewModel.onEquals()
+
+        assertEquals(listOf("1+2"), historyStore.entries.map { it.tokens.renderExpression() })
+    }
+
+    @Test
     fun `converter equals also saves the source expression`() {
         val historyStore = FakeExpressionHistoryStore()
         val viewModel = createViewModel(historyStore = historyStore)
