@@ -56,6 +56,42 @@ class CalculatorViewModelConverterTests {
     }
 
     @Test
+    fun `converter input caps typed decimals at 2`() {
+        val viewModel = createViewModel()
+        viewModel.onModeChanged(CalculatorMode.CONVERTER)
+
+        viewModel.enter("1.239")
+
+        assertEquals("1.23", viewModel.state.value.expression)
+    }
+
+    @Test
+    fun `converter equals rounds the result to 2 decimals`() {
+        val viewModel = createViewModel()
+        viewModel.onModeChanged(CalculatorMode.CONVERTER)
+
+        viewModel.enter("1")
+        viewModel.onOperator(Operator.DIVIDE)
+        viewModel.enter("3")
+        viewModel.onEquals()
+
+        assertEquals("0.33", viewModel.state.value.expression)
+        assertEquals("17.60", viewModel.state.value.preview)
+    }
+
+    @Test
+    fun `swapping units pads the amount to 2 decimals`() {
+        val viewModel = createViewModel()
+        viewModel.onModeChanged(CalculatorMode.CONVERTER)
+        viewModel.enter("5")
+
+        viewModel.onSwapUnits()
+
+        assertEquals("266.67", viewModel.state.value.expression)
+        assertEquals("5.00", viewModel.state.value.preview)
+    }
+
+    @Test
     fun `calculator preview keeps full precision`() {
         val viewModel = createViewModel()
 

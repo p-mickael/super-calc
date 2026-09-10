@@ -17,7 +17,6 @@ import com.example.calc.domain.history.ExpressionHistoryStore
 import com.example.calc.domain.history.HistoryEntry
 import com.example.calc.ui.screen.model.ExpressionState
 import com.example.calc.ui.screen.model.UiState
-import com.example.calc.ui.screen.model.toFormattedString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -70,7 +69,8 @@ class CalculatorViewModel(
             else -> currentState.input.clear()
         }
 
-        inputToUpdate.appendDigit(char)
+        val maxDecimals = if (currentState.calculatorMode == CalculatorMode.CONVERTER) 2 else null
+        inputToUpdate.appendDigit(char, maxDecimals)
     }
 
     fun onOperator(operator: Operator) = edit { it.input.appendOperator(operator) }
@@ -94,13 +94,16 @@ class CalculatorViewModel(
 
         when (val result = calculator.calculate(currentState.input)) {
             is CalculatorResult.Value -> {
-                val previewValue = if (currentState.calculatorMode == CalculatorMode.CALCULATOR) null
-                else displayValueOf(currentState.calculatorMode, result.value)
+                val isConverter = currentState.calculatorMode == CalculatorMode.CONVERTER
+                val decimals = if (isConverter) 2 else null
+                val nextInput = CalculatorInput.of(result.value, decimals)
+                val previewValue = if (!isConverter) null
+                else displayValueOf(currentState.calculatorMode, calculator.preview(nextInput))
 
                 _state.update {
                     it.copy(
-                        input = CalculatorInput.of(result.value),
-                        expression = result.value.toFormattedString(),
+                        input = nextInput,
+                        expression = nextInput.tokens.renderExpression(),
                         previewValue = previewValue,
                         expressionState = ExpressionState.RESULT
                     )
@@ -155,7 +158,7 @@ class CalculatorViewModel(
         appPreferenceStore.saveLastCurrencyPair(current.targetName, current.sourceName)
 
         if (previewValue != null) {
-            val nextInput = CalculatorInput.of(previewValue)
+            val nextInput = CalculatorInput.of(previewValue, decimals = 2)
             _state.update {
                 it.copy(
                     input = nextInput,

@@ -69,7 +69,7 @@ class CalculatorViewModelHistoryTests {
 
         assertEquals(CalculatorMode.CONVERTER, viewModel.state.value.calculatorMode)
         assertEquals(listOf("1+2"), historyStore.entries.map { it.tokens.renderExpression() })
-        assertEquals("3", viewModel.state.value.expression)
+        assertEquals("3.00", viewModel.state.value.expression)
     }
 
     @Test
