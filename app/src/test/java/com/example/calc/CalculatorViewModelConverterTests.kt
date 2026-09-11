@@ -94,6 +94,7 @@ class CalculatorViewModelConverterTests {
     @Test
     fun `calculator preview keeps full precision`() {
         val viewModel = createViewModel()
+        viewModel.onModeChanged(CalculatorMode.CALCULATOR)
 
         viewModel.enter("1")
         viewModel.onOperator(Operator.DIVIDE)

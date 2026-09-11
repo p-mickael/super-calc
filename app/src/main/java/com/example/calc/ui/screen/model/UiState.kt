@@ -10,7 +10,7 @@ data class UiState(
     val expression: String = "",
     val previewValue: BigDecimal? = null,
     val expressionState: ExpressionState = ExpressionState.EDITING,
-    val calculatorMode: CalculatorMode = CalculatorMode.CALCULATOR,
+    val calculatorMode: CalculatorMode = CalculatorMode.CONVERTER,
     val currencyState: CurrencyState = CurrencyState(),
     val historyGroups: List<HistoryDayGroup> = emptyList(),
     val expressionFocusRequestKey: Int = 0

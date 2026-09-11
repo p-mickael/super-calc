@@ -56,9 +56,9 @@ class CalculatorViewModel(
                 }
             }
 
-            appPreferenceStore.getLastCalculatorMode()?.let { lastCalculatorMode ->
-                if (lastCalculatorMode == CalculatorMode.CONVERTER)
-                    switchToConverter()
+            when (appPreferenceStore.getLastCalculatorMode()) {
+                CalculatorMode.CONVERTER, null -> switchToConverter()
+                CalculatorMode.CALCULATOR -> switchToCalculator()
             }
         }
     }

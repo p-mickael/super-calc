@@ -57,8 +57,8 @@ fun TopMenu(
                 onDismissRequest = { menuExpanded = false }
             ) {
                 listOf(
-                    CalculatorMode.CALCULATOR to "Calculatrice",
-                    CalculatorMode.CONVERTER to "Conversion"
+                    CalculatorMode.CONVERTER to "Conversion",
+                    CalculatorMode.CALCULATOR to "Calculatrice"
                 ).forEach { (mode, label) ->
                     DropdownMenuItem(
                         text = {

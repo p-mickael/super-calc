@@ -25,6 +25,7 @@ class CalculatorViewModelHistoryTests {
     fun `successful equals saves the validated source expression`() {
         val historyStore = FakeExpressionHistoryStore()
         val viewModel = createViewModel(historyStore = historyStore)
+        viewModel.onModeChanged(CalculatorMode.CALCULATOR)
 
         viewModel.enter("1+2")
         viewModel.onEquals()
@@ -101,6 +102,7 @@ class CalculatorViewModelHistoryTests {
     @Test
     fun `selecting a history entry restores the input and requests focus at the end`() {
         val viewModel = createViewModel()
+        viewModel.onModeChanged(CalculatorMode.CALCULATOR)
         val selectedTokens = listOf(
             Token.Number("5"),
             Token.Operator(Operator.TIMES),
