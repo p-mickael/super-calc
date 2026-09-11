@@ -1,4 +1,4 @@
-# SuperCalc
+# ConvertCalc
 
 Calculatrice Android avec un mode conversion de devises (API [Frankfurter](https://frankfurter.dev/)).
 

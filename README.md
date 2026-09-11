@@ -1,4 +1,4 @@
-# SuperCalc
+# ConvertCalc
 
 A calculator app for Android with a conversion feature. For now it only convert currencies using the fantastic 
 [Frankfurter API](https://frankfurter.dev/) as source for the conversion rates.

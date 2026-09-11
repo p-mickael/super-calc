@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SuperCalc"
+rootProject.name = "ConvertCalc"
 include(":app")
