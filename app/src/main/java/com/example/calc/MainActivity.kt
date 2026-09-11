@@ -19,7 +19,8 @@ class MainActivity : ComponentActivity() {
                 val calcApplication = application as CalcApplication
                 CalculatorViewModel(
                     calcApplication.ratesRepository,
-                    calcApplication.appPreferenceStore
+                    calcApplication.appPreferenceStore,
+                    calcApplication.expressionHistoryStore
                 )
             }
         }

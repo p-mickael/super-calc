@@ -14,6 +14,8 @@ class AppPreferenceStoreImpl(
 
     companion object {
         val KEY = stringPreferencesKey("last_calculator_mode")
+        val SOURCE_CURRENCY_KEY = stringPreferencesKey("last_source_currency")
+        val TARGET_CURRENCY_KEY = stringPreferencesKey("last_target_currency")
     }
 
     override suspend fun getLastCalculatorMode(): CalculatorMode? {
@@ -24,6 +26,20 @@ class AppPreferenceStoreImpl(
     override suspend fun saveLastCalculatorMode(calculatorMode: CalculatorMode) {
         dataStore.edit {
             it[KEY] = calculatorMode.toString()
+        }
+    }
+
+    override suspend fun getLastCurrencyPair(): Pair<String, String>? {
+        val preferences = dataStore.data.first()
+        val sourceName = preferences[SOURCE_CURRENCY_KEY] ?: return null
+        val targetName = preferences[TARGET_CURRENCY_KEY] ?: return null
+        return sourceName to targetName
+    }
+
+    override suspend fun saveLastCurrencyPair(sourceName: String, targetName: String) {
+        dataStore.edit {
+            it[SOURCE_CURRENCY_KEY] = sourceName
+            it[TARGET_CURRENCY_KEY] = targetName
         }
     }
 }

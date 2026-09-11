@@ -20,20 +20,15 @@ import com.example.calc.ui.theme.CalcTheme
 fun CalculatorDisplay(
     expression: String,
     preview: String,
+    expressionFocusRequestKey: Int,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier)
     {
-        Text(
-            expression,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
-            autoSize = TextAutoSize.StepBased(minFontSize = 24.sp),
-            textAlign = TextAlign.Right,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            color = MaterialTheme.colorScheme.onSurface
+        ExpressionField(
+            expression = expression,
+            focusRequestKey = expressionFocusRequestKey,
+            textColor = MaterialTheme.colorScheme.onSurface
         )
         Text(
             preview,
@@ -41,7 +36,7 @@ fun CalculatorDisplay(
             overflow = TextOverflow.Clip,
             autoSize = TextAutoSize.StepBased(
                 maxFontSize = 60.sp,
-                minFontSize = 12.sp
+                minFontSize = 10.sp
             ),
             textAlign = TextAlign.Right,
             modifier = Modifier
@@ -60,7 +55,8 @@ fun CalculatorDisplayPreview() {
     CalcTheme {
         CalculatorDisplay(
             "5+3x2-5",
-            "6"
+            "6",
+            0
         )
     }
 }

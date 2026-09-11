@@ -2,6 +2,7 @@ package com.example.calc.ui.screen.model
 
 import com.example.calc.domain.CalculatorMode
 import com.example.calc.domain.calculator.model.Operator
+import com.example.calc.domain.calculator.model.Token
 
 data class CalculatorActions(
     val onDigit: (Char) -> Unit,
@@ -16,5 +17,8 @@ data class CalculatorActions(
     val onModeChanged: (CalculatorMode) -> Unit,
     val onConversionSourceChanged: (String) -> Unit,
     val onConversionTargetChanged: (String) -> Unit,
-    val onSwapUnits: () -> Unit
+    val onSwapUnits: () -> Unit,
+    val onHistoryRequested: () -> Unit,
+    val onClearHistory: () -> Unit,
+    val onHistoryEntrySelected: (List<Token>) -> Unit
 )

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -28,10 +29,22 @@ import com.example.calc.ui.theme.CalcTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopMenu(selectedMode: CalculatorMode, onModeChanged: (newMode: CalculatorMode) -> Unit) {
+fun TopMenu(
+    selectedMode: CalculatorMode,
+    onHistoryRequested: () -> Unit,
+    onModeChanged: (newMode: CalculatorMode) -> Unit
+) {
     var menuExpanded by remember { mutableStateOf(false) }
     TopAppBar(
         title = {},
+        navigationIcon = {
+            IconButton(onClick = onHistoryRequested) {
+                Icon(
+                    imageVector = Icons.Default.History,
+                    contentDescription = "Historique"
+                )
+            }
+        },
         actions = {
             IconButton(onClick = { menuExpanded = true }) {
                 Icon(
@@ -81,6 +94,7 @@ fun TopMenuPreview() {
     CalcTheme {
         TopMenu(
             CalculatorMode.CALCULATOR,
+            {},
             {}
         )
     }

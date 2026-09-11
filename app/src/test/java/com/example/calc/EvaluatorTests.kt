@@ -95,6 +95,11 @@ class EvaluatorSuccessTests(
                 "0.3333333333333333"
             ),
             arrayOf(
+                "multiplication keeps a bounded number of significant digits",
+                times(num("0.123456789"), num("0.123456789")),
+                "0.01524157875019052"
+            ),
+            arrayOf(
                 "chained percent",
                 plus(plus(num("100"), pct(num("15"))), pct(num("10"))),
                 "126.5"

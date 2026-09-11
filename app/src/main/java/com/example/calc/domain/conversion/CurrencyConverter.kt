@@ -19,6 +19,6 @@ class CurrencyConverter(
 
         return amount
             .divide(sourceRate, MathContext.DECIMAL64)
-            .multiply(targetRate)
+            .multiply(targetRate, MathContext.DECIMAL64)
     }
 }

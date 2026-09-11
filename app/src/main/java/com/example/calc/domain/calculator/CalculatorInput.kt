@@ -3,6 +3,7 @@ package com.example.calc.domain.calculator
 import com.example.calc.domain.calculator.model.Operator
 import com.example.calc.domain.calculator.model.Token
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 class CalculatorInput private constructor(val tokens: List<Token>) {
     init {
@@ -48,24 +49,34 @@ class CalculatorInput private constructor(val tokens: List<Token>) {
             }
         }
 
-        fun of(value: BigDecimal): CalculatorInput {
-            val valueText = value.abs().stripTrailingZeros().toPlainString()
+        fun of(value: BigDecimal, decimals: Int? = null): CalculatorInput {
+            val normalized = decimals?.let { value.setScale(it, RoundingMode.HALF_UP) } ?: value
+            val valueText = if (decimals != null) normalized.abs().toPlainString()
+                else normalized.abs().stripTrailingZeros().toPlainString()
+
             return CalculatorInput(
-                if (value.signum() < 0) listOf(Token.Negative, Token.Number(valueText))
+                if (normalized.signum() < 0) listOf(Token.Negative, Token.Number(valueText))
                 else listOf(Token.Number(valueText))
             )
         }
+
+        fun fromTokens(tokens: List<Token>): CalculatorInput? =
+            runCatching { CalculatorInput(tokens) }.getOrNull()
     }
 
     private val last get() = tokens.lastOrNull()
     private val lastTokenIsValue = isLeftTokenValue(last)
     private val lastTokenIsNotValue = !lastTokenIsValue
 
-    fun appendDigit(char: Char): CalculatorInput {
+    fun appendDigit(char: Char, maxDecimals: Int? = null): CalculatorInput {
         if (!char.isDigit()) return this
 
         return when (val current = last) {
-            is Token.Number ->
+            is Token.Number -> {
+                val dotIndex = current.text.indexOf('.')
+                val decimalsTyped = if (dotIndex < 0) 0 else current.text.length - dotIndex - 1
+                if (maxDecimals != null && dotIndex >= 0 && decimalsTyped >= maxDecimals) return this
+
                 replaceLast(
                     current.copy(
                         text =
@@ -75,6 +86,7 @@ class CalculatorInput private constructor(val tokens: List<Token>) {
                             }
                     )
                 )
+            }
 
             else -> append(Token.Number(char.toString()))
         }
