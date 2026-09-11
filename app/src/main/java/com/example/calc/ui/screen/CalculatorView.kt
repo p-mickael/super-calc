@@ -46,6 +46,8 @@ fun CalculatorView(viewModel: CalculatorViewModel) {
             onCloseParenthesis = viewModel::onCloseParenthesis,
             onPercent = viewModel::onPercent,
             onDot = viewModel::onDot,
+            onToggleSign = viewModel::onToggleSign,
+            onDoubleZero = viewModel::onDoubleZero,
             onClear = viewModel::onClear,
             onDelete = viewModel::onDelete,
             onEquals = viewModel::onEquals,
@@ -161,6 +163,8 @@ fun CalculatorViewPreview() {
                 previewValue = BigDecimal.ONE,
                 calculatorMode = CalculatorMode.CONVERTER
             ), CalculatorActions(
+                {},
+                {},
                 {},
                 {},
                 {},

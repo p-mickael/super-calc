@@ -2,11 +2,13 @@ package com.example.calc.ui.screen.component
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -16,15 +18,46 @@ import com.example.calc.ui.screen.component.keyboardcomponents.KeyboardRow
 import com.example.calc.ui.screen.model.CalculatorActions
 import com.example.calc.ui.theme.CalcTheme
 
+private const val COLUMN_COUNT = 4
+private const val ROW_COUNT = 6
+
 @Composable
 fun Keyboard(
     actions: CalculatorActions,
     modifier: Modifier = Modifier
-) {
+) = BoxWithConstraints(modifier = modifier) {
+    val gap = 8.dp
+    val buttonHeight = (maxHeight - gap * (ROW_COUNT - 1)) / ROW_COUNT
+    val buttonWidth = (maxWidth - gap * (COLUMN_COUNT - 1)) / COLUMN_COUNT
+
     Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.spacedBy(gap, Alignment.CenterVertically)
     ) {
+        KeyboardRow(
+            listOf(
+                null,
+                CalculatorButtonInfo(
+                    "+/-",
+                    { actions.onToggleSign() },
+                    color = MaterialTheme.colorScheme.secondary,
+                    textColor = MaterialTheme.colorScheme.onSecondary
+                ),
+                CalculatorButtonInfo(
+                    "AC",
+                    { actions.onClear() },
+                    color = MaterialTheme.colorScheme.secondary,
+                    textColor = MaterialTheme.colorScheme.onSecondary
+                ),
+                CalculatorButtonInfo(
+                    "⌫",
+                    { actions.onDelete() },
+                    color = MaterialTheme.colorScheme.secondary,
+                    textColor = MaterialTheme.colorScheme.onSecondary
+                ),
+            ),
+            buttonWidth,
+            buttonHeight
+        )
         KeyboardRow(
             listOf(
                 CalculatorButtonInfo(
@@ -51,7 +84,9 @@ fun Keyboard(
                     color = MaterialTheme.colorScheme.secondary,
                     textColor = MaterialTheme.colorScheme.onSecondary
                 ),
-            )
+            ),
+            buttonWidth,
+            buttonHeight
         )
         KeyboardRow(
             listOf(
@@ -79,7 +114,9 @@ fun Keyboard(
                     color = MaterialTheme.colorScheme.secondary,
                     textColor = MaterialTheme.colorScheme.onSecondary
                 ),
-            )
+            ),
+            buttonWidth,
+            buttonHeight
         )
         KeyboardRow(
             listOf(
@@ -107,7 +144,9 @@ fun Keyboard(
                     color = MaterialTheme.colorScheme.secondary,
                     textColor = MaterialTheme.colorScheme.onSecondary
                 ),
-            )
+            ),
+            buttonWidth,
+            buttonHeight
         )
         KeyboardRow(
             listOf(
@@ -135,7 +174,9 @@ fun Keyboard(
                     color = MaterialTheme.colorScheme.secondary,
                     textColor = MaterialTheme.colorScheme.onSecondary
                 ),
-            )
+            ),
+            buttonWidth,
+            buttonHeight
         )
         KeyboardRow(
             listOf(
@@ -152,9 +193,8 @@ fun Keyboard(
                     textColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 CalculatorButtonInfo(
-                    "⌫",
-                    { actions.onDelete() },
-                    onLongPress = { actions.onClear() },
+                    "00",
+                    { actions.onDoubleZero() },
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     textColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
@@ -165,7 +205,9 @@ fun Keyboard(
                     textColor = MaterialTheme.colorScheme.onPrimary
 
                 ),
-            )
+            ),
+            buttonWidth,
+            buttonHeight
         )
     }
 }
@@ -179,6 +221,8 @@ fun KeyboardPreview() {
     CalcTheme {
         Keyboard(
             CalculatorActions(
+            {},
+            {},
             {},
             {},
             {},

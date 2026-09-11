@@ -48,18 +48,16 @@ class CalculatorViewModel(
         private const val MAX_HISTORY_ENTRIES = 500
     }
 
-    init {
-        scope.launch {
-            appPreferenceStore.getLastCurrencyPair()?.let { (sourceName, targetName) ->
-                _state.update {
-                    it.copy(currencyState = it.currencyState.copy(sourceName = sourceName, targetName = targetName))
-                }
+    private val preferenceRestoration = scope.launch {
+        appPreferenceStore.getLastCurrencyPair()?.let { (sourceName, targetName) ->
+            _state.update {
+                it.copy(currencyState = it.currencyState.copy(sourceName = sourceName, targetName = targetName))
             }
+        }
 
-            when (appPreferenceStore.getLastCalculatorMode()) {
-                CalculatorMode.CONVERTER, null -> switchToConverter()
-                CalculatorMode.CALCULATOR -> switchToCalculator()
-            }
+        when (appPreferenceStore.getLastCalculatorMode()) {
+            CalculatorMode.CONVERTER, null -> switchToConverter()
+            CalculatorMode.CALCULATOR -> switchToCalculator()
         }
     }
 
@@ -78,6 +76,16 @@ class CalculatorViewModel(
     fun onOpenParenthesis() = edit { it.input.openParenthesis() }
     fun onCloseParenthesis() = edit { it.input.closeParenthesis() }
     fun onDot() = edit { it.input.appendDot() }
+    fun onToggleSign() = edit { it.input.toggleSign() }
+    fun onDoubleZero() = edit { currentState ->
+        val inputToUpdate = when (currentState.expressionState) {
+            ExpressionState.EDITING -> currentState.input
+            else -> currentState.input.clear()
+        }
+
+        val maxDecimals = if (currentState.calculatorMode == CalculatorMode.CONVERTER) 2 else null
+        inputToUpdate.appendDigit('0', maxDecimals).appendDigit('0', maxDecimals)
+    }
     fun onDelete() = edit { currentState ->
         if (currentState.expressionState != ExpressionState.EDITING)
             currentState.input.clear()
@@ -194,14 +202,14 @@ class CalculatorViewModel(
         }
     }
 
-    fun onForeground() {
+    fun onForeground() = scope.launch {
+        preferenceRestoration.join()
+
         if (_state.value.calculatorMode == CalculatorMode.CONVERTER)
-            scope.launch {
-                updateConverter(
-                    _state.value.currencyState.sourceName,
-                    _state.value.currencyState.targetName
-                )
-            }
+            updateConverter(
+                _state.value.currencyState.sourceName,
+                _state.value.currencyState.targetName
+            )
     }
 
     private suspend fun updateConverter(sourceName: String, targetName: String): Boolean {

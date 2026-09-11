@@ -114,6 +114,20 @@ class CalculatorInput private constructor(val tokens: List<Token>) {
         else -> append(Token.Number("0."))
     }
 
+    fun toggleSign(): CalculatorInput = when (val current = last) {
+        is Token.Number -> {
+            val precedingIndex = tokens.size - 2
+            if (tokens.getOrNull(precedingIndex) is Token.Negative)
+                CalculatorInput(tokens.take(precedingIndex) + current)
+            else
+                CalculatorInput(tokens.dropLast(1) + Token.Negative + current)
+        }
+
+        Token.Negative -> CalculatorInput(tokens.dropLast(1))
+
+        else -> if (lastTokenIsNotValue) CalculatorInput(tokens + Token.Negative) else this
+    }
+
     fun openParenthesis(): CalculatorInput = append(Token.LeftParenthesis)
 
     fun closeParenthesis(): CalculatorInput {

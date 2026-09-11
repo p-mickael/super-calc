@@ -2,28 +2,28 @@ package com.example.calc.ui.screen.component.keyboardcomponents
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun KeyboardRow(buttonsInfo: Iterable<CalculatorButtonInfo>) {
+fun KeyboardRow(buttonsInfo: List<CalculatorButtonInfo?>, buttonWidth: Dp, buttonHeight: Dp) {
     Row(
         modifier = Modifier
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         buttonsInfo.forEach {
-            CalculatorButton(
-                it,
-                modifier = Modifier
-                    .weight(1f)
-                    .aspectRatio(1f)
-            )
+            if (it != null) {
+                CalculatorButton(it, modifier = Modifier.size(buttonWidth, buttonHeight))
+            } else {
+                Spacer(modifier = Modifier.size(buttonWidth, buttonHeight))
+            }
         }
     }
 }
@@ -37,6 +37,8 @@ fun KeyboardRowListPreview() {
             CalculatorButtonInfo("2"),
             CalculatorButtonInfo("3"),
             CalculatorButtonInfo("+"),
-        )
+        ),
+        buttonWidth = 72.dp,
+        buttonHeight = 64.dp
     )
 }

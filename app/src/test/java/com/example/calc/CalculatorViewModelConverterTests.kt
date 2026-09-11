@@ -66,6 +66,46 @@ class CalculatorViewModelConverterTests {
     }
 
     @Test
+    fun `double zero caps at 2 decimals in converter mode`() {
+        val viewModel = createViewModel()
+        viewModel.onModeChanged(CalculatorMode.CONVERTER)
+        viewModel.enter("5")
+        viewModel.onDot()
+
+        viewModel.onDoubleZero()
+
+        assertEquals("5.00", viewModel.state.value.expression)
+
+        viewModel.onDoubleZero()
+
+        assertEquals("5.00", viewModel.state.value.expression)
+    }
+
+    @Test
+    fun `double zero is unrestricted in calculator mode`() {
+        val viewModel = createViewModel()
+        viewModel.onModeChanged(CalculatorMode.CALCULATOR)
+        viewModel.enter("5")
+        viewModel.onDot()
+
+        viewModel.onDoubleZero()
+        viewModel.onDoubleZero()
+
+        assertEquals("5.0000", viewModel.state.value.expression)
+    }
+
+    @Test
+    fun `toggling sign is reflected in the expression`() {
+        val viewModel = createViewModel()
+        viewModel.onModeChanged(CalculatorMode.CALCULATOR)
+        viewModel.enter("5")
+
+        viewModel.onToggleSign()
+
+        assertEquals("-5", viewModel.state.value.expression)
+    }
+
+    @Test
     fun `converter equals rounds the result to 2 decimals`() {
         val viewModel = createViewModel()
         viewModel.onModeChanged(CalculatorMode.CONVERTER)

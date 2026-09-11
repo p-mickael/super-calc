@@ -11,6 +11,8 @@ data class CalculatorActions(
     val onCloseParenthesis: () -> Unit,
     val onPercent: () -> Unit,
     val onDot: () -> Unit,
+    val onToggleSign: () -> Unit,
+    val onDoubleZero: () -> Unit,
     val onClear: () -> Unit,
     val onDelete: () -> Unit,
     val onEquals: () -> Unit,
