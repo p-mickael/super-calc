@@ -79,7 +79,7 @@ fun HistoryDrawer(
     }
 }
 
-private fun formatHistoryDate(date: LocalDate): String =
+internal fun formatHistoryDate(date: LocalDate): String =
     java.time.LocalDate.of(date.year, date.monthNumber, date.dayOfMonth)
         .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
 

@@ -11,7 +11,11 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -23,6 +27,7 @@ import com.example.calc.ui.screen.component.ConverterDisplay
 import com.example.calc.ui.screen.component.HistoryDrawer
 import com.example.calc.ui.screen.component.Keyboard
 import com.example.calc.ui.screen.component.TopMenu
+import com.example.calc.ui.screen.component.TrackedAmountsDrawer
 import com.example.calc.ui.screen.model.CalculatorActions
 import com.example.calc.ui.screen.model.UiState
 import com.example.calc.ui.theme.CalcTheme
@@ -58,6 +63,11 @@ fun CalculatorView(viewModel: CalculatorViewModel) {
             onHistoryRequested = viewModel::onHistoryRequested,
             onClearHistory = viewModel::onClearHistory,
             onHistoryEntrySelected = viewModel::onHistoryEntrySelected,
+            onSaveAmount = viewModel::onSaveAmount,
+            onTrackedAmountsRequested = viewModel::onTrackedAmountsRequested,
+            onTrackedAmountDeleted = viewModel::onTrackedAmountDeleted,
+            onClearTrackedAmounts = viewModel::onClearTrackedAmounts,
+            onTrackedAmountCurrencyChanged = viewModel::onTrackedAmountCurrencyChanged,
         )
     )
 }
@@ -70,21 +80,52 @@ private fun Content(
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+    var drawerKind by remember { mutableStateOf(DrawerKind.HISTORY) }
+
+    fun toggleDrawer(kind: DrawerKind, refresh: () -> Unit) = coroutineScope.launch {
+        when {
+            drawerState.currentValue == DrawerValue.Closed -> {
+                drawerKind = kind
+                refresh()
+                drawerState.open()
+            }
+
+            drawerKind != kind -> {
+                drawerKind = kind
+                refresh()
+            }
+
+            else -> drawerState.close()
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = true,
         drawerContent = {
-            HistoryDrawer(
-                historyGroups = state.historyGroups,
-                onEntrySelected = { tokens ->
-                    coroutineScope.launch {
-                        drawerState.close()
-                        actions.onHistoryEntrySelected(tokens)
-                    }
-                },
-                onClearHistory = actions.onClearHistory
-            )
+            when (drawerKind) {
+                DrawerKind.HISTORY ->
+                    HistoryDrawer(
+                        historyGroups = state.historyGroups,
+                        onEntrySelected = { tokens ->
+                            coroutineScope.launch {
+                                drawerState.close()
+                                actions.onHistoryEntrySelected(tokens)
+                            }
+                        },
+                        onClearHistory = actions.onClearHistory
+                    )
+
+                DrawerKind.TRACKED_AMOUNTS ->
+                    TrackedAmountsDrawer(
+                        groups = state.trackedAmounts.groups,
+                        displayCurrency = state.trackedAmounts.displayCurrency,
+                        currencyList = state.currencyState.currencyList,
+                        onCurrencyChanged = actions.onTrackedAmountCurrencyChanged,
+                        onAmountDeleted = actions.onTrackedAmountDeleted,
+                        onClearAll = actions.onClearTrackedAmounts
+                    )
+            }
         }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -93,15 +134,9 @@ private fun Content(
                 topBar = {
                     TopMenu(
                         selectedMode = state.calculatorMode,
-                        onHistoryRequested = {
-                            coroutineScope.launch {
-                                if (drawerState.currentValue == DrawerValue.Closed) {
-                                    actions.onHistoryRequested()
-                                    drawerState.open()
-                                } else {
-                                    drawerState.close()
-                                }
-                            }
+                        onHistoryRequested = { toggleDrawer(DrawerKind.HISTORY, actions.onHistoryRequested) },
+                        onTrackedAmountsRequested = {
+                            toggleDrawer(DrawerKind.TRACKED_AMOUNTS, actions.onTrackedAmountsRequested)
                         },
                         onModeChanged = actions.onModeChanged
                     )
@@ -141,7 +176,8 @@ private fun Content(
                     }
 
                     Keyboard(
-                        actions,
+                        actions = actions,
+                        canSaveAmount = state.canSaveAmount,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(8.dp)
@@ -153,6 +189,8 @@ private fun Content(
     }
 }
 
+private enum class DrawerKind { HISTORY, TRACKED_AMOUNTS }
+
 @Preview
 @Composable
 fun CalculatorViewPreview() {
@@ -162,25 +200,31 @@ fun CalculatorViewPreview() {
                 expression = "5+4-8x(2+4)",
                 previewValue = BigDecimal.ONE,
                 calculatorMode = CalculatorMode.CONVERTER
-            ), CalculatorActions(
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {},
-                {}
+            ),
+            actions = CalculatorActions(
+                onDigit = {},
+                onOperator = {},
+                onOpenParenthesis = {},
+                onCloseParenthesis = {},
+                onPercent = {},
+                onDot = {},
+                onToggleSign = {},
+                onDoubleZero = {},
+                onClear = {},
+                onDelete = {},
+                onEquals = {},
+                onModeChanged = {},
+                onConversionSourceChanged = {},
+                onConversionTargetChanged = {},
+                onSwapUnits = {},
+                onHistoryRequested = {},
+                onClearHistory = {},
+                onHistoryEntrySelected = {},
+                onSaveAmount = {},
+                onTrackedAmountsRequested = {},
+                onTrackedAmountDeleted = {},
+                onClearTrackedAmounts = {},
+                onTrackedAmountCurrencyChanged = {}
             )
         )
     }

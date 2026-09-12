@@ -16,6 +16,7 @@ class AppPreferenceStoreImpl(
         val KEY = stringPreferencesKey("last_calculator_mode")
         val SOURCE_CURRENCY_KEY = stringPreferencesKey("last_source_currency")
         val TARGET_CURRENCY_KEY = stringPreferencesKey("last_target_currency")
+        val TRACKED_AMOUNT_CURRENCY_KEY = stringPreferencesKey("last_tracked_amount_currency")
     }
 
     override suspend fun getLastCalculatorMode(): CalculatorMode? {
@@ -40,6 +41,15 @@ class AppPreferenceStoreImpl(
         dataStore.edit {
             it[SOURCE_CURRENCY_KEY] = sourceName
             it[TARGET_CURRENCY_KEY] = targetName
+        }
+    }
+
+    override suspend fun getLastTrackedAmountCurrency(): String? =
+        dataStore.data.first()[TRACKED_AMOUNT_CURRENCY_KEY]
+
+    override suspend fun saveLastTrackedAmountCurrency(isoName: String) {
+        dataStore.edit {
+            it[TRACKED_AMOUNT_CURRENCY_KEY] = isoName
         }
     }
 }

@@ -10,11 +10,17 @@ import com.example.calc.domain.calculator.CalculatorResult
 import com.example.calc.domain.calculator.model.Operator
 import com.example.calc.domain.calculator.model.Token
 import com.example.calc.domain.conversion.CurrencyConverter
+import com.example.calc.domain.conversion.CurrencyRates
+import com.example.calc.domain.conversion.EURO_ISO
 import com.example.calc.domain.conversion.RatesRepository
 import com.example.calc.domain.calculator.renderExpression
 import com.example.calc.domain.history.ExpressionHistory
 import com.example.calc.domain.history.ExpressionHistoryStore
 import com.example.calc.domain.history.HistoryEntry
+import com.example.calc.domain.tracking.DayRatesSnapshot
+import com.example.calc.domain.tracking.TrackedAmount
+import com.example.calc.domain.tracking.TrackedAmountStore
+import com.example.calc.domain.tracking.TrackedAmounts
 import com.example.calc.ui.screen.model.ExpressionState
 import com.example.calc.ui.screen.model.UiState
 import kotlinx.coroutines.CoroutineScope
@@ -26,22 +32,28 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import java.math.BigDecimal
+import java.util.UUID
 import kotlin.time.Clock
 
 class CalculatorViewModel(
     private val repository: RatesRepository,
     private val appPreferenceStore: AppPreferenceStore,
     private val expressionHistoryStore: ExpressionHistoryStore,
+    private val trackedAmountStore: TrackedAmountStore,
     private val clock: Clock = Clock.System,
     private val timeZoneProvider: () -> TimeZone = { TimeZone.currentSystemDefault() },
-    private val externalScope: CoroutineScope? = null
+    private val externalScope: CoroutineScope? = null,
+    private val idGenerator: () -> String = { UUID.randomUUID().toString() }
 ) : ViewModel() {
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
     private val calculator = Calculator()
     private var currencyConverter: CurrencyConverter? = null
+    private var latestRates: CurrencyRates? = null
     private val historyMutex = Mutex()
+    private val trackedAmountMutex = Mutex()
     private val scope: CoroutineScope get() = externalScope ?: viewModelScope
 
     companion object {
@@ -52,6 +64,12 @@ class CalculatorViewModel(
         appPreferenceStore.getLastCurrencyPair()?.let { (sourceName, targetName) ->
             _state.update {
                 it.copy(currencyState = it.currencyState.copy(sourceName = sourceName, targetName = targetName))
+            }
+        }
+
+        appPreferenceStore.getLastTrackedAmountCurrency()?.let { isoName ->
+            _state.update {
+                it.copy(trackedAmounts = it.trackedAmounts.copy(displayCurrency = isoName))
             }
         }
 
@@ -202,6 +220,64 @@ class CalculatorViewModel(
         }
     }
 
+    fun onSaveAmount() = scope.launch {
+        val current = _state.value
+        if (current.calculatorMode != CalculatorMode.CONVERTER) return@launch
+        val previewValue = current.previewValue ?: return@launch
+        val rates = latestRates ?: return@launch
+
+        val now = clock.now()
+        val timeZone = timeZoneProvider()
+        val today = now.toLocalDateTime(timeZone).date
+        val amountEur = CurrencyConverter(rates, current.currencyState.targetName, EURO_ISO).convert(previewValue)
+
+        trackedAmountMutex.withLock {
+            val snapshots = trackedAmountStore.readDayRates()
+            if (today !in snapshots) {
+                trackedAmountStore.writeDayRates(
+                    snapshots + (today to DayRatesSnapshot(today, rates.ratesMap, now))
+                )
+            }
+
+            val amounts = trackedAmountStore.readAmounts()
+            trackedAmountStore.writeAmounts(
+                listOf(TrackedAmount(idGenerator(), amountEur, now)) + amounts
+            )
+            refreshTrackedAmountsLocked(timeZone)
+        }
+    }
+
+    fun onTrackedAmountsRequested() = scope.launch {
+        trackedAmountMutex.withLock {
+            refreshTrackedAmountsLocked(timeZoneProvider())
+        }
+    }
+
+    fun onTrackedAmountDeleted(id: String) = scope.launch {
+        trackedAmountMutex.withLock {
+            trackedAmountStore.writeAmounts(
+                trackedAmountStore.readAmounts().filterNot { it.id == id }
+            )
+            refreshTrackedAmountsLocked(timeZoneProvider())
+        }
+    }
+
+    fun onClearTrackedAmounts() = scope.launch {
+        trackedAmountMutex.withLock {
+            trackedAmountStore.clear()
+            _state.update { it.copy(trackedAmounts = it.trackedAmounts.copy(groups = emptyList())) }
+        }
+    }
+
+    fun onTrackedAmountCurrencyChanged(isoName: String) = scope.launch {
+        _state.update { it.copy(trackedAmounts = it.trackedAmounts.copy(displayCurrency = isoName)) }
+        appPreferenceStore.saveLastTrackedAmountCurrency(isoName)
+
+        trackedAmountMutex.withLock {
+            refreshTrackedAmountsLocked(timeZoneProvider())
+        }
+    }
+
     fun onForeground() = scope.launch {
         preferenceRestoration.join()
 
@@ -224,6 +300,7 @@ class CalculatorViewModel(
             sourceName,
             targetName
         )
+        latestRates = rates
         _state.update {
             it.copy(
                 currencyState = it.currencyState.copy(
@@ -308,6 +385,24 @@ class CalculatorViewModel(
                     )
                 )
             }
+        }
+    }
+
+    private suspend fun refreshTrackedAmountsLocked(timeZone: TimeZone) {
+        val amounts = trackedAmountStore.readAmounts()
+        val storedSnapshots = trackedAmountStore.readDayRates()
+        val prunedSnapshots = TrackedAmounts.pruneOrphanSnapshots(amounts, storedSnapshots, timeZone)
+        if (prunedSnapshots.size != storedSnapshots.size) {
+            trackedAmountStore.writeDayRates(prunedSnapshots)
+        }
+
+        val groups = TrackedAmounts.groupByDay(amounts, timeZone)
+        _state.update {
+            it.copy(
+                trackedAmounts = it.trackedAmounts.copy(
+                    groups = TrackedAmounts.convert(groups, prunedSnapshots, it.trackedAmounts.displayCurrency)
+                )
+            )
         }
     }
 

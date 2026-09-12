@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,6 +26,7 @@ private const val ROW_COUNT = 6
 @Composable
 fun Keyboard(
     actions: CalculatorActions,
+    canSaveAmount: Boolean,
     modifier: Modifier = Modifier
 ) = BoxWithConstraints(modifier = modifier) {
     val gap = 8.dp
@@ -35,7 +38,14 @@ fun Keyboard(
     ) {
         KeyboardRow(
             listOf(
-                null,
+                CalculatorButtonInfo(
+                    label = "Épargner",
+                    onPress = { actions.onSaveAmount() },
+                    color = MaterialTheme.colorScheme.secondary,
+                    textColor = MaterialTheme.colorScheme.onSecondary,
+                    icon = Icons.Default.Savings,
+                    enabled = canSaveAmount
+                ),
                 CalculatorButtonInfo(
                     "+/-",
                     { actions.onToggleSign() },
@@ -220,26 +230,32 @@ fun Keyboard(
 fun KeyboardPreview() {
     CalcTheme {
         Keyboard(
-            CalculatorActions(
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {}
+            actions = CalculatorActions(
+                onDigit = {},
+                onOperator = {},
+                onOpenParenthesis = {},
+                onCloseParenthesis = {},
+                onPercent = {},
+                onDot = {},
+                onToggleSign = {},
+                onDoubleZero = {},
+                onClear = {},
+                onDelete = {},
+                onEquals = {},
+                onModeChanged = {},
+                onConversionSourceChanged = {},
+                onConversionTargetChanged = {},
+                onSwapUnits = {},
+                onHistoryRequested = {},
+                onClearHistory = {},
+                onHistoryEntrySelected = {},
+                onSaveAmount = {},
+                onTrackedAmountsRequested = {},
+                onTrackedAmountDeleted = {},
+                onClearTrackedAmounts = {},
+                onTrackedAmountCurrencyChanged = {}
             ),
+            canSaveAmount = true,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(470.dp)

@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,17 +33,26 @@ import com.example.calc.ui.theme.CalcTheme
 fun TopMenu(
     selectedMode: CalculatorMode,
     onHistoryRequested: () -> Unit,
+    onTrackedAmountsRequested: () -> Unit,
     onModeChanged: (newMode: CalculatorMode) -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     TopAppBar(
         title = {},
         navigationIcon = {
-            IconButton(onClick = onHistoryRequested) {
-                Icon(
-                    imageVector = Icons.Default.History,
-                    contentDescription = "Historique"
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onHistoryRequested) {
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = "Historique"
+                    )
+                }
+                IconButton(onClick = onTrackedAmountsRequested) {
+                    Icon(
+                        imageVector = Icons.Default.Savings,
+                        contentDescription = "Épargne"
+                    )
+                }
             }
         },
         actions = {
@@ -93,9 +103,10 @@ fun TopMenu(
 fun TopMenuPreview() {
     CalcTheme {
         TopMenu(
-            CalculatorMode.CALCULATOR,
-            {},
-            {}
+            selectedMode = CalculatorMode.CALCULATOR,
+            onHistoryRequested = {},
+            onTrackedAmountsRequested = {},
+            onModeChanged = {}
         )
     }
 }

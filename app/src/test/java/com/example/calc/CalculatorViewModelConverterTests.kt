@@ -7,7 +7,11 @@ import com.example.calc.domain.conversion.CurrencyRates
 import com.example.calc.domain.conversion.RatesRepository
 import com.example.calc.domain.history.ExpressionHistoryStore
 import com.example.calc.domain.history.HistoryEntry
+import com.example.calc.domain.tracking.DayRatesSnapshot
+import com.example.calc.domain.tracking.TrackedAmount
+import com.example.calc.domain.tracking.TrackedAmountStore
 import com.example.calc.ui.screen.CalculatorViewModel
+import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.assertEquals
@@ -151,6 +155,7 @@ class CalculatorViewModelConverterTests {
             repository = FakeRatesRepository(),
             appPreferenceStore = preferenceStore,
             expressionHistoryStore = FakeExpressionHistoryStore(),
+            trackedAmountStore = FakeTrackedAmountStore(),
             clock = FixedClock(now),
             timeZoneProvider = { kotlinx.datetime.TimeZone.of("Europe/Paris") },
             externalScope = CoroutineScope(Dispatchers.Unconfined)
@@ -189,6 +194,14 @@ class CalculatorViewModelConverterTests {
         override suspend fun saveLastCurrencyPair(sourceName: String, targetName: String) {
             savedPair = sourceName to targetName
         }
+
+        private var trackedAmountCurrency: String? = null
+
+        override suspend fun getLastTrackedAmountCurrency(): String? = trackedAmountCurrency
+
+        override suspend fun saveLastTrackedAmountCurrency(isoName: String) {
+            trackedAmountCurrency = isoName
+        }
     }
 
     private class FakeRatesRepository : RatesRepository {
@@ -205,6 +218,26 @@ class CalculatorViewModelConverterTests {
         override suspend fun readEntries(): List<HistoryEntry> = emptyList()
         override suspend fun writeEntries(entries: List<HistoryEntry>) = Unit
         override suspend fun clear() = Unit
+    }
+
+    private class FakeTrackedAmountStore : TrackedAmountStore {
+        private var amounts: List<TrackedAmount> = emptyList()
+        private var dayRates: Map<LocalDate, DayRatesSnapshot> = emptyMap()
+
+        override suspend fun readAmounts(): List<TrackedAmount> = amounts
+        override suspend fun writeAmounts(amounts: List<TrackedAmount>) {
+            this.amounts = amounts
+        }
+
+        override suspend fun readDayRates(): Map<LocalDate, DayRatesSnapshot> = dayRates
+        override suspend fun writeDayRates(snapshots: Map<LocalDate, DayRatesSnapshot>) {
+            dayRates = snapshots
+        }
+
+        override suspend fun clear() {
+            amounts = emptyList()
+            dayRates = emptyMap()
+        }
     }
 
     private class FixedClock(private val now: Instant) : Clock {

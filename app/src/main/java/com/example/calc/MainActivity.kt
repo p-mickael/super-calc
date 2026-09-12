@@ -20,7 +20,8 @@ class MainActivity : ComponentActivity() {
                 CalculatorViewModel(
                     calcApplication.ratesRepository,
                     calcApplication.appPreferenceStore,
-                    calcApplication.expressionHistoryStore
+                    calcApplication.expressionHistoryStore,
+                    calcApplication.trackedAmountStore
                 )
             }
         }

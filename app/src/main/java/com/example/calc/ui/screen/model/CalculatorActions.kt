@@ -22,5 +22,10 @@ data class CalculatorActions(
     val onSwapUnits: () -> Unit,
     val onHistoryRequested: () -> Unit,
     val onClearHistory: () -> Unit,
-    val onHistoryEntrySelected: (List<Token>) -> Unit
+    val onHistoryEntrySelected: (List<Token>) -> Unit,
+    val onSaveAmount: () -> Unit,
+    val onTrackedAmountsRequested: () -> Unit,
+    val onTrackedAmountDeleted: (String) -> Unit,
+    val onClearTrackedAmounts: () -> Unit,
+    val onTrackedAmountCurrencyChanged: (String) -> Unit
 )
