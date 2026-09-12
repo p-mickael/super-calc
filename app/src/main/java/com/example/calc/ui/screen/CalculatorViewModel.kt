@@ -10,6 +10,7 @@ import com.example.calc.domain.calculator.CalculatorResult
 import com.example.calc.domain.calculator.model.Operator
 import com.example.calc.domain.calculator.model.Token
 import com.example.calc.domain.conversion.CurrencyConverter
+import com.example.calc.domain.conversion.CurrencyRates
 import com.example.calc.domain.conversion.RatesRepository
 import com.example.calc.domain.calculator.renderExpression
 import com.example.calc.domain.history.ExpressionHistory
@@ -205,11 +206,17 @@ class CalculatorViewModel(
     fun onForeground() = scope.launch {
         preferenceRestoration.join()
 
-        if (_state.value.calculatorMode == CalculatorMode.CONVERTER)
-            updateConverter(
+        // On vérifie/rafraîchit les taux à chaque ouverture ou retour au premier plan, même en
+        // mode Calculator, pour qu'ils soient déjà à jour au moment où l'utilisateur bascule en
+        // mode Converter. On ne répercute le résultat sur l'état affiché que si ce mode est actif.
+        val rates = repository.getRates() ?: return@launch
+        if (_state.value.calculatorMode == CalculatorMode.CONVERTER) {
+            applyRates(
+                rates,
                 _state.value.currencyState.sourceName,
                 _state.value.currencyState.targetName
             )
+        }
     }
 
     private suspend fun updateConverter(sourceName: String, targetName: String): Boolean {
@@ -219,6 +226,11 @@ class CalculatorViewModel(
             return false
         }
 
+        applyRates(rates, sourceName, targetName)
+        return true
+    }
+
+    private fun applyRates(rates: CurrencyRates, sourceName: String, targetName: String) {
         currencyConverter = CurrencyConverter(
             rates = rates,
             sourceName,
@@ -234,8 +246,6 @@ class CalculatorViewModel(
                 previewValue = computePreviewValue(CalculatorMode.CONVERTER, it.input)
             )
         }
-
-        return true
     }
 
     private suspend fun switchToConverter() {

@@ -4,6 +4,7 @@ import com.example.calc.domain.conversion.CurrencyRates
 import com.example.calc.domain.conversion.RatesRepository
 import kotlinx.coroutines.flow.first
 import kotlin.time.Clock
+import kotlin.time.Instant
 
 private val defaultRatesResponse = RatesResponse(
     date = "2026-06-19",
@@ -40,17 +41,25 @@ private val defaultRatesResponse = RatesResponse(
     )
 )
 
+private val defaultRates = CurrencyRates.fromMap(
+    defaultRatesResponse.rates.mapValues { (_, value) -> value.toBigDecimal() },
+    Instant.DISTANT_PAST
+)
+
 class RatesRepositoryImpl(private val ratesStore: RatesStore) : RatesRepository {
     override suspend fun getRates(): CurrencyRates {
-        val rates = ratesStore.read().first()
+        val storedRates = ratesStore.read().first()
 
-        if (rates != null && rates.isFresh)
-            return rates
+        if (storedRates != null && storedRates.isFresh)
+            return storedRates
 
         val response = try {
             fetchLatestRates()
         } catch (_: Exception) {
-            defaultRatesResponse
+            // Pas de réseau (ou erreur inattendue) : on ne touche pas au cache existant et on ne
+            // fait surtout pas passer les taux par défaut pour "à jour" — sinon plus aucune
+            // tentative de mise à jour n'aurait lieu avant le prochain seuil de fraîcheur.
+            return storedRates ?: defaultRates
         }
 
         val fetchedRates = CurrencyRates.fromMap(
