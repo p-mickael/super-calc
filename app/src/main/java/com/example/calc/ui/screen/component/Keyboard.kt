@@ -14,6 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.calc.domain.calculator.model.Operator
 import com.example.calc.ui.screen.component.keyboardcomponents.CalculatorButtonInfo
+import com.example.calc.ui.screen.component.keyboardcomponents.KEY_GAP
 import com.example.calc.ui.screen.component.keyboardcomponents.KeyboardRow
 import com.example.calc.ui.screen.model.CalculatorActions
 import com.example.calc.ui.theme.CalcTheme
@@ -26,7 +27,7 @@ fun Keyboard(
     actions: CalculatorActions,
     modifier: Modifier = Modifier
 ) = BoxWithConstraints(modifier = modifier) {
-    val gap = 8.dp
+    val gap = KEY_GAP
     val buttonHeight = (maxHeight - gap * (ROW_COUNT - 1)) / ROW_COUNT
     val buttonWidth = (maxWidth - gap * (COLUMN_COUNT - 1)) / COLUMN_COUNT
 
@@ -35,7 +36,6 @@ fun Keyboard(
     ) {
         KeyboardRow(
             listOf(
-                null,
                 CalculatorButtonInfo(
                     "+/-",
                     { actions.onToggleSign() },
@@ -52,7 +52,8 @@ fun Keyboard(
                     "⌫",
                     { actions.onDelete() },
                     color = MaterialTheme.colorScheme.secondary,
-                    textColor = MaterialTheme.colorScheme.onSecondary
+                    textColor = MaterialTheme.colorScheme.onSecondary,
+                    columnSpan = 2
                 ),
             ),
             buttonWidth,

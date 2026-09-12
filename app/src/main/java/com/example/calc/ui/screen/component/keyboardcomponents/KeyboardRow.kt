@@ -11,16 +11,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+val KEY_GAP = 8.dp
+
+private fun Dp.spanned(span: Int) = this * span + KEY_GAP * (span - 1)
+
 @Composable
 fun KeyboardRow(buttonsInfo: List<CalculatorButtonInfo?>, buttonWidth: Dp, buttonHeight: Dp) {
     Row(
         modifier = Modifier
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(KEY_GAP)
     ) {
         buttonsInfo.forEach {
             if (it != null) {
-                CalculatorButton(it, modifier = Modifier.size(buttonWidth, buttonHeight))
+                CalculatorButton(
+                    it,
+                    modifier = Modifier.size(buttonWidth.spanned(it.columnSpan), buttonHeight)
+                )
             } else {
                 Spacer(modifier = Modifier.size(buttonWidth, buttonHeight))
             }

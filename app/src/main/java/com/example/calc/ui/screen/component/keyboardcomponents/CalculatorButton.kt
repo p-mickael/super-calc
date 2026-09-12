@@ -21,7 +21,8 @@ data class CalculatorButtonInfo(
     val onPress: () -> Unit = {},
     val onLongPress: () -> Unit = {},
     val color: Color? = null,
-    val textColor: Color? = null
+    val textColor: Color? = null,
+    val columnSpan: Int = 1
 )
 
 @Composable
