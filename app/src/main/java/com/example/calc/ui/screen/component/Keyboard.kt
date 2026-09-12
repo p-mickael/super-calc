@@ -43,25 +43,6 @@ fun Keyboard(
                     textColor = MaterialTheme.colorScheme.onSecondary
                 ),
                 CalculatorButtonInfo(
-                    "AC",
-                    { actions.onClear() },
-                    color = MaterialTheme.colorScheme.secondary,
-                    textColor = MaterialTheme.colorScheme.onSecondary
-                ),
-                CalculatorButtonInfo(
-                    "⌫",
-                    { actions.onDelete() },
-                    color = MaterialTheme.colorScheme.secondary,
-                    textColor = MaterialTheme.colorScheme.onSecondary,
-                    columnSpan = 2
-                ),
-            ),
-            buttonWidth,
-            buttonHeight
-        )
-        KeyboardRow(
-            listOf(
-                CalculatorButtonInfo(
                     "( ",
                     { actions.onOpenParenthesis() },
                     color = MaterialTheme.colorScheme.secondary,
@@ -72,6 +53,25 @@ fun Keyboard(
                     { actions.onCloseParenthesis() },
                     color = MaterialTheme.colorScheme.secondary,
                     textColor = MaterialTheme.colorScheme.onSecondary
+                ),
+                CalculatorButtonInfo(
+                    "⌫",
+                    { actions.onDelete() },
+                    color = MaterialTheme.colorScheme.secondary,
+                    textColor = MaterialTheme.colorScheme.onSecondary
+                ),
+            ),
+            buttonWidth,
+            buttonHeight
+        )
+        KeyboardRow(
+            listOf(
+                CalculatorButtonInfo(
+                    "AC",
+                    { actions.onClear() },
+                    color = MaterialTheme.colorScheme.secondary,
+                    textColor = MaterialTheme.colorScheme.onSecondary,
+                    columnSpan = 2
                 ),
                 CalculatorButtonInfo(
                     "%",
